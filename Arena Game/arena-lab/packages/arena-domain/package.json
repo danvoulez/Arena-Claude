@@ -1,0 +1,19 @@
+{
+  "name": "@arenalab/arena-domain",
+  "version": "0.1.0",
+  "description": "ArenaLab Domain Types & Rules",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Tests not yet implemented\"",
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
+

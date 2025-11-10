@@ -1,0 +1,48 @@
+name: Tests
+
+# Workflow específico para testes (pode rodar mais frequentemente)
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        # Testar em múltiplas versões do Node.js
+        node-version: [18, 20]
+    
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+      
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+      
+      - name: Compilar packages
+        run: pnpm build
+      
+      - name: Rodar testes unitários
+        run: pnpm test
+      
+      - name: Rodar testes E2E (se configurado)
+        run: pnpm test:e2e || echo "E2E tests não configurados"
+        if: false # Desabilitado até implementar
+
