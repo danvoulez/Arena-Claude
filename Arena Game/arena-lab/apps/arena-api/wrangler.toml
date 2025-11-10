@@ -1,0 +1,27 @@
+name = "arena-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Routes (configurar em produção)
+# routes = [
+#   { pattern = "api.arenalab.dev/*", zone_name = "arenalab.dev" }
+# ]
+
+# KV Namespaces (opcional, para cache)
+# [[kv_namespaces]]
+# binding = "LEDGER_CACHE"
+# id = "..."
+
+# Durable Objects (opcional, para rate limiting)
+# [[durable_objects.bindings]]
+# name = "RATE_LIMITER"
+# class_name = "RateLimiter"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "development"
+
+# Secrets (configurar via wrangler secret put)
+# GOOGLE_OAUTH_CLIENT_ID = "..."
+# GOOGLE_OAUTH_CLIENT_SECRET = "..."
+

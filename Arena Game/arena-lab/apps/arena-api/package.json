@@ -1,0 +1,23 @@
+{
+  "name": "@arenalab/arena-api",
+  "version": "0.1.0",
+  "description": "ArenaLab API - Cloudflare Workers",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "echo \"Tests not yet implemented\""
+  },
+  "dependencies": {
+    "@arenalab/arena-domain": "workspace:*",
+    "@arenalab/atomic-core": "workspace:*",
+    "@arenalab/trajectory-engine": "workspace:*",
+    "hono": "^3.11.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20231121.0",
+    "typescript": "^5.0.0",
+    "wrangler": "^3.19.0"
+  }
+}
+
