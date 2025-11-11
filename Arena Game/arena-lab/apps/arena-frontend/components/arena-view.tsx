@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useArenaStore } from "@/lib/store"
 import { Swords, TrendingUp, ThumbsUp, X, Loader2, ScrollText, AlertCircle, Sparkles } from "lucide-react"
-import type { ModelCreature } from "@/lib/creature-types"
+import type { ModelCreature, DuelRecord } from "@/lib/creature-types"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { CreatureCard } from "./creature-card"
 import { EvolutionCeremony } from "./evolution-ceremony"
@@ -21,7 +21,7 @@ import { CreatureLegend } from "./creature-legend"
 import { ProductionLab } from "./production-lab"
 
 export function ArenaView() {
-  const { creatures, duelRecords, lifeEvents, updateCreature, addDuelRecord, addLifeEvent, restCreature, setRecentNarrativeEvents } =
+  const { creatures, duelRecords, lifeEvents, updateCreature, addDuelRecord, addLifeEvent, restCreature, setRecentNarrativeEvents, addOakMessage } =
     useArenaStore()
   const [evolutionCeremony, setEvolutionCeremony] = useState<{
     creature: ModelCreature
@@ -142,50 +142,59 @@ export function ArenaView() {
       }
       addDuelRecord(duelRecord)
 
-      // Process narrative events
+      // Process narrative events - process each creature's events separately
+      const processEvents = (events: any[], creature: ModelCreature) => {
+        events.forEach((event: any) => {
+          if (event.type === 'level_up') {
+            addLifeEvent({
+              id: `event_${Date.now()}_${Math.random()}`,
+              creatureId: creature.id,
+              type: 'levelup',
+              description: `Leveled up to ${event.data.newLevel}!`,
+              timestamp: new Date().toISOString(),
+              metadata: event.data
+            })
+            
+            // Add Oak message for level up
+            addOakMessage({
+              id: `oak-levelup-${Date.now()}`,
+              type: 'celebration',
+              content: `Fantástico! ${creature.name} subiu para o nível ${event.data.newLevel}!`,
+              timestamp: new Date().toISOString()
+            })
+          } else if (event.type === 'xp_gained') {
+            addLifeEvent({
+              id: `event_${Date.now()}_${Math.random()}`,
+              creatureId: creature.id,
+              type: 'battle',
+              description: `Gained ${event.data.amount} XP from battle`,
+              timestamp: new Date().toISOString()
+            })
+          } else if (event.type === 'first_victory') {
+            addOakMessage({
+              id: `oak-first-victory-${Date.now()}`,
+              type: 'celebration',
+              content: `Incrível, Treinador! Sua primeira vitória na arena! Este é um marco que ficará para sempre no Ledger.`,
+              timestamp: new Date().toISOString()
+            })
+          }
+        })
+      }
+
+      // Process events for each creature
+      if (data.narrativeEvents?.creatureA) {
+        processEvents(data.narrativeEvents.creatureA, creatureA)
+      }
+      if (data.narrativeEvents?.creatureB) {
+        processEvents(data.narrativeEvents.creatureB, creatureB)
+      }
+
+      // Store all events for ProfessorOakPanel to react to
       const allEvents = [
-        ...(data.narrativeEvents.creatureA || []),
-        ...(data.narrativeEvents.creatureB || [])
+        ...(data.narrativeEvents?.creatureA || []),
+        ...(data.narrativeEvents?.creatureB || [])
       ]
-
-      // Store events for ProfessorOakPanel to react to
       setRecentNarrativeEvents(allEvents)
-
-      allEvents.forEach((event: any) => {
-        if (event.type === 'level_up') {
-          addLifeEvent({
-            id: `event_${Date.now()}_${Math.random()}`,
-            creatureId: event.type.includes('A') ? creatureA.id : creatureB.id,
-            type: 'levelup',
-            description: `Leveled up to ${event.data.newLevel}!`,
-            timestamp: new Date().toISOString(),
-            metadata: event.data
-          })
-          
-          // Add Oak message for level up
-          addOakMessage({
-            id: `oak-levelup-${Date.now()}`,
-            type: 'celebration',
-            content: `Fantástico! ${event.type.includes('A') ? creatureA.name : creatureB.name} subiu para o nível ${event.data.newLevel}!`,
-            timestamp: new Date().toISOString()
-          })
-        } else if (event.type === 'xp_gained') {
-          addLifeEvent({
-            id: `event_${Date.now()}_${Math.random()}`,
-            creatureId: event.type.includes('A') ? creatureA.id : creatureB.id,
-            type: 'battle',
-            description: `Gained ${event.data.amount} XP from battle`,
-            timestamp: new Date().toISOString()
-          })
-        } else if (event.type === 'first_victory') {
-          addOakMessage({
-            id: `oak-first-victory-${Date.now()}`,
-            type: 'celebration',
-            content: `Incrível, Treinador! Sua primeira vitória na arena! Este é um marco que ficará para sempre no Ledger.`,
-            timestamp: new Date().toISOString()
-          })
-        }
-      })
 
       toast({
         title: "Battle Complete!",
@@ -314,76 +323,107 @@ export function ArenaView() {
             </div>
 
             {/* Creature Selection */}
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Challenger A</label>
-                <div className="grid gap-2">
-                  {creatures.map((creature) => (
-                    <div
-                      key={creature.id}
-                      onClick={() => setCreatureAId(creature.id)}
-                      className={creatureAId === creature.id ? "ring-2 ring-primary rounded-lg" : ""}
-                    >
-                      <CreatureCard
-                        creature={creature}
-                        isSelected={creatureAId === creature.id}
-                        onRest={() => restCreature(creature.id)}
-                      />
-                    </div>
-                  ))}
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <label className="text-sm font-semibold flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+                  Challenger A
+                </label>
+                <ScrollArea className="h-[400px] pr-4">
+                  <div className="space-y-3">
+                    {creatures.map((creature) => (
+                      <div
+                        key={creature.id}
+                        onClick={() => setCreatureAId(creature.id)}
+                        className={`transition-all cursor-pointer ${
+                          creatureAId === creature.id ? "ring-2 ring-primary rounded-lg scale-[1.02]" : "hover:opacity-80"
+                        }`}
+                      >
+                        <CreatureCard
+                          creature={creature}
+                          isSelected={creatureAId === creature.id}
+                          onRest={() => restCreature(creature.id)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Challenger B</label>
-                <div className="grid gap-2">
-                  {creatures.map((creature) => (
-                    <div
-                      key={creature.id}
-                      onClick={() => setCreatureBId(creature.id)}
-                      className={creatureBId === creature.id ? "ring-2 ring-primary rounded-lg" : ""}
-                    >
-                      <CreatureCard
-                        creature={creature}
-                        isSelected={creatureBId === creature.id}
-                        onRest={() => restCreature(creature.id)}
-                      />
-                    </div>
-                  ))}
-                </div>
+              <div className="space-y-3">
+                <label className="text-sm font-semibold flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                  Challenger B
+                </label>
+                <ScrollArea className="h-[400px] pr-4">
+                  <div className="space-y-3">
+                    {creatures.map((creature) => (
+                      <div
+                        key={creature.id}
+                        onClick={() => setCreatureBId(creature.id)}
+                        className={`transition-all cursor-pointer ${
+                          creatureBId === creature.id ? "ring-2 ring-primary rounded-lg scale-[1.02]" : "hover:opacity-80"
+                        }`}
+                      >
+                        <CreatureCard
+                          creature={creature}
+                          isSelected={creatureBId === creature.id}
+                          onRest={() => restCreature(creature.id)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
               </div>
             </div>
 
             {/* Battle Prompt */}
-            <Card className="p-6 space-y-4">
+            <Card className="p-6 space-y-4 border-2 border-arena/20 bg-card/50">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Battle Prompt</label>
+                <label className="text-sm font-semibold flex items-center gap-2">
+                  <Swords className="h-4 w-4 text-arena" />
+                  Battle Prompt
+                </label>
                 <Textarea
-                  placeholder="Enter your prompt to test both creatures..."
+                  placeholder="Enter your prompt to test both creatures... (e.g., 'Write a haiku about AI')"
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  className="min-h-24"
+                  className="min-h-32 text-sm"
                   disabled={isGenerating}
                 />
               </div>
 
-              <Button
-                onClick={handleStartBattle}
-                disabled={!prompt.trim() || isGenerating || creatureAId === creatureBId || !creatureA || !creatureB}
-                className="w-full gap-2 bg-arena text-arena-foreground hover:bg-arena/90"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Battle in Progress...
-                  </>
-                ) : (
-                  <>
-                    <Swords className="h-4 w-4" />
-                    Start Battle
-                  </>
+              <div className="flex items-center gap-2">
+                {creatureA && creatureB && (
+                  <div className="flex-1 text-xs text-muted-foreground">
+                    {creatureAId === creatureBId ? (
+                      <span className="text-destructive">⚠️ Select different creatures</span>
+                    ) : (
+                      <span>
+                        {creatureA.name} <span className="text-muted-foreground">vs</span> {creatureB.name}
+                      </span>
+                    )}
+                  </div>
                 )}
-              </Button>
+                <Button
+                  onClick={handleStartBattle}
+                  disabled={!prompt.trim() || isGenerating || creatureAId === creatureBId || !creatureA || !creatureB}
+                  className="gap-2 bg-arena text-arena-foreground hover:bg-arena/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  size="lg"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Battle in Progress...
+                    </>
+                  ) : (
+                    <>
+                      <Swords className="h-4 w-4" />
+                      Start Battle
+                    </>
+                  )}
+                </Button>
+              </div>
             </Card>
 
             {/* Battle Results */}
