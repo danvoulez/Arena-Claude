@@ -1,6 +1,7 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
-import type { ModelCreature, DuelRecord, LifeEvent, TrainingSession, ProfessorOakMessage } from "./creature-types"
+import type { ModelCreature, DuelRecord, LifeEvent, TrainingSession } from "./creature-types"
+import type { ProfessorOakMessage } from "./professor-oak"
 import { atomicAPI } from "./atomic-api"
 
 export interface PipelineNode {
